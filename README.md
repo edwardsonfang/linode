@@ -1,10 +1,6 @@
 # Deploy Linode with a Custom IMG
 
----
-
 Brief introduction
-
----
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -12,6 +8,8 @@ Brief introduction
 - [FAQ](#faq)
 - [Troubleshooting Guide](#troubleshooting-guide)
 - [Remarks](#remarks)
+
+## Prerequisites
 
 
 ## Usage
