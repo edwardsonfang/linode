@@ -63,6 +63,16 @@ public class Uploadfiles {
 
         // Execute the request
         try (Response response = client.newCall(request).execute()) {
+
+	    //RPS information from response header
+            String rateLimit = response.header("x-ratelimit-limit");
+            String rateRemaining = response.header("x-ratelimit-remaining");
+            String rateReset = response.header("x-ratelimit-reset");
+
+            System.out.println("Rate Limit: " + rateLimit);
+            System.out.println("Rate Remaining: " + rateRemaining);
+            System.out.println("Rate Reset: " + rateReset);
+
             if (response.isSuccessful()) {
                 System.out.println("File uploaded successfully.");
             } else {
