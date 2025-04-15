@@ -168,10 +168,14 @@ int upload_file(const char *file_path) {
     // curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_debug_callback);
 
     CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        fprintf(stderr, "CURL error: %s\n", curl_easy_strerror(res));
+    long http_code = 0;
+    auto curl_code =
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (http_code == 200 && res != CURLE_OK) {
+      printf("File uploaded successfully\n");
     } else {
-        printf("File uploaded successfully\n");
+      fprintf(stderr, "http_code: %ld, CURL error: %s\n", http_code,
+              curl_easy_strerror(res));
     }
 
     curl_slist_free_all(headers);
