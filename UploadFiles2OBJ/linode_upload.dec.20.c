@@ -37,9 +37,10 @@
 #define SECRET_KEY "your secret key"
 #define HOST_NAME "your-bucket-name.us-iad-10.linodeobjects.com"
 #else
+#define REGION "us-sea-9"
 #define ACCESS_KEY "your access key"
 #define SECRET_KEY "your secret key"
-#define HOST_NAME "your-bucket-name.us-sea-9.linodeobjects.com"
+#define HOST_NAME "your-bucket-name." REGION ".linodeobjects.com"
 #endif
 #define UPLOAD_PATH "path/in/bucket/filename"
 #define FILE_PATH "/path/in/local/filename"
@@ -104,8 +105,8 @@ int upload_file(const char *file_path) {
     char string_to_sign[2048];
     snprintf(string_to_sign, sizeof(string_to_sign),
              "AWS4-HMAC-SHA256\n%s\n%s/%s/s3/aws4_request\n%s",
-            //  datetime, date, "us-east-1", canonical_request_hash_hex);
-            datetime, date, "us-sea-9", canonical_request_hash_hex);
+             //  datetime, date, "us-east-1", canonical_request_hash_hex);
+             datetime, date, REGION, canonical_request_hash_hex);
 
     // Derive signing key
     unsigned char k_date[SHA256_DIGEST_LENGTH], k_region[SHA256_DIGEST_LENGTH], k_service[SHA256_DIGEST_LENGTH], signing_key[SHA256_DIGEST_LENGTH];
@@ -115,7 +116,7 @@ int upload_file(const char *file_path) {
     snprintf(key, sizeof(key), "AWS4%s", SECRET_KEY);
     hmac_sha256(key, date, k_date, &len);
     // hmac_sha256((char *)k_date, "us-east-1", k_region, &len);
-    hmac_sha256((char *)k_date, "us-sea-9", k_region, &len);
+    hmac_sha256((char *)k_date, REGION, k_region, &len);
     hmac_sha256((char *)k_region, "s3", k_service, &len);
     hmac_sha256((char *)k_service, "aws4_request", signing_key, &len);
 
@@ -128,10 +129,15 @@ int upload_file(const char *file_path) {
 
     // Create authorization header
     char authorization_header[512];
-    snprintf(authorization_header, sizeof(authorization_header),
-            //  "Authorization:AWS4-HMAC-SHA256 Credential=%s/%s/us-east-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=%s",
-            "Authorization:AWS4-HMAC-SHA256 Credential=%s/%s/us-sea-9/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=%s",
-             ACCESS_KEY, date, signature_hex);
+    snprintf(
+        authorization_header, sizeof(authorization_header),
+        //  "Authorization:AWS4-HMAC-SHA256
+        //  Credential=%s/%s/us-east-1/s3/aws4_request,
+        //  SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=%s",
+        "Authorization:AWS4-HMAC-SHA256 Credential=%s/%s/" REGION
+        "/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, "
+        "Signature=%s",
+        ACCESS_KEY, date, signature_hex);
 
     // Prepare x-amz-date header
     char x_amz_date_header[128];
