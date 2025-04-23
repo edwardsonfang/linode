@@ -39,8 +39,8 @@
 #define UPLOAD_PATH "path/to/your/file/in/bucket/filename"
 #define FILE_PATH "/path/to/your/file/local/filename"
 
-void hmac_sha256(const char *key, const char *data, unsigned char *output, unsigned int *output_len) {
-    HMAC(EVP_sha256(), key, strlen(key), (unsigned char *)data, strlen(data), output, output_len);
+unsigned char *hmac_sha256(const char *key, size_t key_len, const char *data, char *output, int *output_len) {
+  return HMAC(EVP_sha256(), key, key_len, data, strlen(data), output, output_len);
 }
 
 void hash_sha256(const char *data, unsigned char *output) {
@@ -168,16 +168,16 @@ int upload_file(const char *file_path) {
     unsigned int len;
     char key[256];
 
-    snprintf(key, sizeof(key), "AWS4%s", SECRET_KEY);
-    hmac_sha256(key, date, k_date, &len);
+    len = snprintf(key, sizeof(key), "AWS4%s", SECRET_KEY);
+    hmac_sha256(key, len, date, k_date, &len);
     // hmac_sha256((char *)k_date, "us-east-1", k_region, &len);
-    hmac_sha256((char *)k_date, REGION, k_region, &len);
-    hmac_sha256((char *)k_region, "s3", k_service, &len);
-    hmac_sha256((char *)k_service, "aws4_request", signing_key, &len);
+    hmac_sha256((char *)k_date, len, REGION, k_region, &len);
+    hmac_sha256((char *)k_region, len, "s3", k_service, &len);
+    hmac_sha256((char *)k_service, len, "aws4_request", signing_key, &len);
 
     // Sign the string to sign
     unsigned char signature[SHA256_DIGEST_LENGTH];
-    hmac_sha256((char *)signing_key, string_to_sign, signature, &len);
+    hmac_sha256((char *)signing_key, len, string_to_sign, signature, &len);
 
     char signature_hex[65];
     to_hex(signature, SHA256_DIGEST_LENGTH, signature_hex);
