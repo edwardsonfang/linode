@@ -1,13 +1,11 @@
 {
     "configurations": [
         {
-            "name": "C/C++: gcc-13 build and debug active file",
+            "name": "C/C++: gcc build and debug active file",
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "args": [
-
-            ],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
@@ -25,9 +23,11 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc-13 build active file",
+            "preLaunchTask": "C/C++: gcc build active file",
             "miDebuggerPath": "gdb"
         }
     ],
+    "console": "internalConsole",
+    "outputCapture": "std",
     "version": "2.0.0"
 }
