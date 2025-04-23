@@ -1,3 +1,7 @@
+# Usage: Edit build-helper.sh, replace <AK> and <SK> with valid keys. then run:
+# source build-helper.sh
+# runAll
+
 function stat_test_cleanup() {
   md5sum ./tmp_test
   ./tmp_test
