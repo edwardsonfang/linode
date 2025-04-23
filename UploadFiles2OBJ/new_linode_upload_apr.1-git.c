@@ -5,6 +5,30 @@
 #include <openssl/sha.h>
 #include <curl/curl.h>
 
+#ifndef REGION
+#define REGION ""
+#error "Please define REGION for preprocessor"
+#endif
+
+#ifndef ACCESS_KEY
+#define ACCESS_KEY ""
+#error "Please define ACCESS_KEY for preprocessor"
+#endif
+
+#ifndef SECRET_KEY
+#define SECRET_KEY ""
+#error "Please define SECRET_KEY for preprocessor"
+#endif
+
+#ifndef HOST_NAME
+#define HOST_NAME ""
+#error "Please define HOST_NAME for preprocessor"
+#endif
+
+#define ROOT "/home/omoisi/linode/jijia/UploadFiles2OBJ/"
+#define UPLOAD_PATH "jijia-test-bucket/readme.md"
+#define FILE_PATH ROOT "readme.md"
+
 // Debug callback function
 /* static int my_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
     const char *text;
@@ -32,12 +56,6 @@
     return 0;
 } */
 
-#define REGION "sg-sin-1"
-#define ACCESS_KEY "your access key"
-#define SECRET_KEY "your secret key"
-#define HOST_NAME "your-bucket-name.sg-sin-1.linodeobjects.com"
-#define UPLOAD_PATH "path/to/your/file/in/bucket/filename"
-#define FILE_PATH "/path/to/your/file/local/filename"
 
 unsigned char *hmac_sha256(const char *key, size_t key_len, const char *data, char *output, int *output_len) {
   return HMAC(EVP_sha256(), key, key_len, data, strlen(data), output, output_len);
@@ -230,8 +248,7 @@ int upload_file(const char *file_path) {
 
     CURLcode res = curl_easy_perform(curl);
     long http_code = 0;
-    auto curl_code =
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    int curl_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     if (http_code == 200 && res != CURLE_OK) {
       printf("File uploaded successfully\n");
     } else {
