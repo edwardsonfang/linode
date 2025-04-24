@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "hmac.h": "c",
+        "sha.h": "c",
+        "curl.h": "c",
+        "stdio.h": "c",
+        "string.h": "c"
+    }
+}

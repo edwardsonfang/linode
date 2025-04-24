@@ -5,6 +5,30 @@
 #include <openssl/sha.h>
 #include <curl/curl.h>
 
+#ifndef REGION
+#define REGION ""
+#error "Please define REGION for preprocessor"
+#endif
+
+#ifndef ACCESS_KEY
+#define ACCESS_KEY ""
+#error "Please define ACCESS_KEY for preprocessor"
+#endif
+
+#ifndef SECRET_KEY
+#define SECRET_KEY ""
+#error "Please define SECRET_KEY for preprocessor"
+#endif
+
+#ifndef HOST_NAME
+#define HOST_NAME ""
+#error "Please define HOST_NAME for preprocessor"
+#endif
+
+#define ROOT "/home/omoisi/linode/jijia/UploadFiles2OBJ/"
+#define UPLOAD_PATH "jijia-test-bucket/readme.md"
+#define FILE_PATH ROOT "readme.md"
+
 // Debug callback function
 /* static int my_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
     const char *text;
@@ -32,20 +56,8 @@
     return 0;
 } */
 
-#if 0
-#define ACCESS_KEY "your access key"
-#define SECRET_KEY "your secret key"
-#define HOST_NAME "your-bucket-name.us-iad-10.linodeobjects.com"
-#else
-#define ACCESS_KEY "your access key"
-#define SECRET_KEY "your secret key"
-#define HOST_NAME "your-bucket-name.us-sea-9.linodeobjects.com"
-#endif
-#define UPLOAD_PATH "path/in/bucket/filename"
-#define FILE_PATH "/path/in/local/filename"
-
-void hmac_sha256(const char *key, const char *data, unsigned char *output, unsigned int *output_len) {
-    HMAC(EVP_sha256(), key, strlen(key), (unsigned char *)data, strlen(data), output, output_len);
+unsigned char *hmac_sha256(const char *key, size_t key_len, const char *data, char *output, int *output_len) {
+  return HMAC(EVP_sha256(), key, key_len, data, strlen(data), output, output_len);
 }
 
 void hash_sha256(const char *data, unsigned char *output) {
@@ -104,34 +116,39 @@ int upload_file(const char *file_path) {
     char string_to_sign[2048];
     snprintf(string_to_sign, sizeof(string_to_sign),
              "AWS4-HMAC-SHA256\n%s\n%s/%s/s3/aws4_request\n%s",
-            //  datetime, date, "us-east-1", canonical_request_hash_hex);
-            datetime, date, "us-sea-9", canonical_request_hash_hex);
+             //  datetime, date, "us-east-1", canonical_request_hash_hex);
+             datetime, date, REGION, canonical_request_hash_hex);
 
     // Derive signing key
     unsigned char k_date[SHA256_DIGEST_LENGTH], k_region[SHA256_DIGEST_LENGTH], k_service[SHA256_DIGEST_LENGTH], signing_key[SHA256_DIGEST_LENGTH];
     unsigned int len;
     char key[256];
 
-    snprintf(key, sizeof(key), "AWS4%s", SECRET_KEY);
-    hmac_sha256(key, date, k_date, &len);
+    len = snprintf(key, sizeof(key), "AWS4%s", SECRET_KEY);
+    hmac_sha256(key, len, date, k_date, &len);
     // hmac_sha256((char *)k_date, "us-east-1", k_region, &len);
-    hmac_sha256((char *)k_date, "us-sea-9", k_region, &len);
-    hmac_sha256((char *)k_region, "s3", k_service, &len);
-    hmac_sha256((char *)k_service, "aws4_request", signing_key, &len);
+    hmac_sha256((char *)k_date, len, REGION, k_region, &len);
+    hmac_sha256((char *)k_region, len, "s3", k_service, &len);
+    hmac_sha256((char *)k_service, len, "aws4_request", signing_key, &len);
 
     // Sign the string to sign
     unsigned char signature[SHA256_DIGEST_LENGTH];
-    hmac_sha256((char *)signing_key, string_to_sign, signature, &len);
+    hmac_sha256((char *)signing_key, len, string_to_sign, signature, &len);
 
     char signature_hex[65];
     to_hex(signature, SHA256_DIGEST_LENGTH, signature_hex);
 
     // Create authorization header
     char authorization_header[512];
-    snprintf(authorization_header, sizeof(authorization_header),
-            //  "Authorization:AWS4-HMAC-SHA256 Credential=%s/%s/us-east-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=%s",
-            "Authorization:AWS4-HMAC-SHA256 Credential=%s/%s/us-sea-9/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=%s",
-             ACCESS_KEY, date, signature_hex);
+    snprintf(
+        authorization_header, sizeof(authorization_header),
+        //  "Authorization:AWS4-HMAC-SHA256
+        //  Credential=%s/%s/us-east-1/s3/aws4_request,
+        //  SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=%s",
+        "Authorization:AWS4-HMAC-SHA256 Credential=%s/%s/" REGION
+        "/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, "
+        "Signature=%s",
+        ACCESS_KEY, date, signature_hex);
 
     // Prepare x-amz-date header
     char x_amz_date_header[128];
@@ -168,10 +185,13 @@ int upload_file(const char *file_path) {
     // curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_debug_callback);
 
     CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        fprintf(stderr, "CURL error: %s\n", curl_easy_strerror(res));
+    long http_code = 0;
+    int curl_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (http_code == 200 && res != CURLE_OK) {
+      printf("File uploaded successfully\n");
     } else {
-        printf("File uploaded successfully\n");
+      fprintf(stderr, "http_code: %ld, CURL error: %s\n", http_code,
+              curl_easy_strerror(res));
     }
 
     curl_slist_free_all(headers);
