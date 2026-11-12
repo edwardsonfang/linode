@@ -1,0 +1,17 @@
+target/
+.env
+.venv/
+__pycache__/
+
+# 私密原始资料、实站记录和本地构建产物不公开发布。
+original/
+LIVE_TEST.md
+*.zip
+*.jar
+*.class
+*.log
+lib/
+tests/browser_direct.cjs
+tests/browser_playback.cjs
+tests/playback_gateway.py
+requirements-playback.txt
